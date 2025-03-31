@@ -41,4 +41,4 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ghcr.io/t3chguy/timescaledb-postgis:latest
+          tags: ghcr.io/jakub-tomanik/pg-container:latest
