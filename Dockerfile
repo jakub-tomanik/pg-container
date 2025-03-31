@@ -1,3 +1,16 @@
+FROM postgres:16-bookworm AS pgvectorscale
+
+RUN apt-get update \
+      && apt-get install -y --no-install-recommends curl make ca-certificates gcc pkg-config clang postgresql-server-dev-16 libssl-dev git
+
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
+ENV RUSTFLAGS="-C target-feature=+avx2,+fma"
+RUN cargo install cargo-pgrx --version 0.12.5 --locked
+RUN cargo pgrx init --pg16 pg_config
+RUN cd /tmp && git clone --branch 0.5.1 https://github.com/timescale/pgvectorscale
+RUN cd /tmp/pgvectorscale/pgvectorscale && cargo pgrx install --release
+
 FROM postgres:16-bookworm
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -41,7 +54,10 @@ RUN apt-get -y install postgresql-16-pgvector
 ## Pgvectorscale
 # https://github.com/timescale/pgvectorscale
 #
-RUN apt-get -y install pgvectorscale-postgresql-16
+#RUN apt-get -y install pgvectorscale-postgresql-16
+COPY --from=pgvectorscale  /usr/share/postgresql/16/extension/vectorscale.control /usr/share/postgresql/16/extension/vectorscale.control
+COPY --from=pgvectorscale /usr/share/postgresql/16/extension/vectorscale*.sql /usr/share/postgresql/16/extension/
+COPY --from=pgvectorscale /usr/lib/postgresql/16/lib/vectorscale-0.5.1.so /usr/lib/postgresql/16/lib/vectorscale-0.5.1.so
 
 ## MobilityDB
 # https://github.com/MobilityDB/MobilityDB
