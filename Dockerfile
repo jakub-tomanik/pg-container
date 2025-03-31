@@ -19,8 +19,7 @@ RUN apt-get -q update && \
 ## Postgis
 # https://trac.osgeo.org/postgis/wiki/UsersWikiPostGIS24UbuntuPGSQL10Apt
 #
-RUN apt-get -q update && \
-        DEBIAN_FRONTEND=noninteractive apt-get -y install postgresql-16-postgis-3 \
+RUN apt-get -y install postgresql-16-postgis-3 \
         postgresql-16-postgis-3-scripts \
         postgresql-16-pgrouting \
         postgresql-16-pgrouting-scripts
@@ -29,23 +28,25 @@ RUN echo "trusted = true" >> /usr/share/postgresql/16/extension/postgis.control
 ## pg_cron
 # https://github.com/citusdata/pg_cron
 #
-RUN apt-get -q update && \
-        DEBIAN_FRONTEND=noninteractive apt-get -y install postgresql-16-cron
+RUN apt-get -y install postgresql-16-cron
 
 ## Extension plpython3
-RUN DEBIAN_FRONTEND=noninteractive apt-get -y install python3 postgresql-plpython3-16 python3-requests
+RUN apt-get -y install python3 postgresql-plpython3-16 python3-requests
 
 ## Pgvector
 # https://github.com/pgvector/pgvector
 #
-RUN apt-get -q update && \
-        DEBIAN_FRONTEND=noninteractive apt-get -y install postgresql-16-pgvector
+RUN apt-get -y install postgresql-16-pgvector
+
+## Pgvectorscale
+# https://github.com/timescale/pgvectorscale
+#
+RUN apt-get -y install pgvectorscale-postgresql-16
 
 ## MobilityDB
 # https://github.com/MobilityDB/MobilityDB
 #
-RUN apt-get -q update && \
-        DEBIAN_FRONTEND=noninteractive apt-get -y install postgresql-16-mobilitydb
+RUN apt-get -y install postgresql-16-mobilitydb
 
 ## pgbackrest
 # https://pgbackrest.org/
