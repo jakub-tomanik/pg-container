@@ -1,15 +1,30 @@
-FROM postgres:16-bookworm AS pgvectorscale
+# Apache Age
+# https://github.com/apache/age
 
-RUN apt-get update \
-      && apt-get install -y --no-install-recommends curl make ca-certificates gcc pkg-config clang postgresql-server-dev-16 libssl-dev git
+FROM postgres:16 AS age
 
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-ENV PATH="/root/.cargo/bin:${PATH}"
-ENV RUSTFLAGS="-C target-feature=+avx2,+fma"
-RUN cargo install cargo-pgrx --version 0.12.5 --locked
-RUN cargo pgrx init --pg16 pg_config
-RUN cd /tmp && git clone --branch 0.5.1 https://github.com/timescale/pgvectorscale
-RUN cd /tmp/pgvectorscale/pgvectorscale && cargo pgrx install --release
+ARG age_release=1.5.0-rc0
+
+ADD "https://github.com/apache/age/archive/refs/tags/PG16/v${age_release}.tar.gz" \
+  /tmp/age.tar.gz
+
+RUN set -eux; \
+  tar -xvf /tmp/age.tar.gz -C /tmp; \
+  rm -rf /tmp/age.tar.gz;
+
+RUN set -eux; \
+  apt-get update; \
+  apt-get install -y --no-install-recommends --no-install-suggests \
+  build-essential \
+  postgresql-server-dev-16 \
+  libreadline-dev \
+  zlib1g-dev \
+  bison \
+  flex \
+  ;
+
+WORKDIR /tmp/age-PG16-v${age_release}
+RUN make -j$(nproc) install
 
 FROM postgres:16-bookworm
 
@@ -55,9 +70,6 @@ RUN apt-get -y install postgresql-16-pgvector
 # https://github.com/timescale/pgvectorscale
 #
 #RUN apt-get -y install pgvectorscale-postgresql-16
-COPY --from=pgvectorscale  /usr/share/postgresql/16/extension/vectorscale.control /usr/share/postgresql/16/extension/vectorscale.control
-COPY --from=pgvectorscale /usr/share/postgresql/16/extension/vectorscale*.sql /usr/share/postgresql/16/extension/
-COPY --from=pgvectorscale /usr/lib/postgresql/16/lib/vectorscale-0.5.1.so /usr/lib/postgresql/16/lib/vectorscale-0.5.1.so
 
 ## MobilityDB
 # https://github.com/MobilityDB/MobilityDB
@@ -70,9 +82,15 @@ RUN apt-get -y install postgresql-16-mobilitydb
 #RUN apt-get -q update && \
 #        DEBIAN_FRONTEND=noninteractive apt-get -y install pgbackrest
 
+## Apache AGE
+COPY --from=BASE /usr/lib/postgresql/16/lib/age.so /usr/lib/postgresql/16/lib/age.so
+COPY --from=BASE /usr/lib/postgresql/16/lib/bitcode /usr/lib/postgresql/16/lib/bitcode
+COPY --from=BASE /usr/share/postgresql/16/extension/age--1.5.0.sql /usr/share/postgresql/16/extension/age--1.5.0.sql
+COPY --from=BASE /usr/share/postgresql/16/extension/age.control /usr/share/postgresql/16/extension/age.control
+
 ## Config
 # extension timescaledb and others must be preloaded
-RUN echo "shared_preload_libraries = 'timescaledb,pg_stat_statements,pg_cron'" >> /usr/share/postgresql/postgresql.conf.sample
+RUN echo "shared_preload_libraries = 'age,timescaledb,pg_stat_statements,pg_cron'" >> /usr/share/postgresql/postgresql.conf.sample
 # timescaledb telemetry off
 RUN echo "timescaledb.telemetry_level=off" >> /usr/share/postgresql/postgresql.conf.sample
 # Fix: initdb: error: invalid locale settings; check LANG and LC_* environment variables
