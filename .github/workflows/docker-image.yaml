@@ -1,0 +1,44 @@
+name: Workflow Docker
+
+on:
+  push:
+    branches:
+      - 'main'
+  schedule:
+    # we build monthly at 00:00 on day-of-month 1
+    #- cron:  '0 0 1 * *'
+    # we build weekly at 00:00 on Sunday.
+    - cron:  '0 0 * * 0'
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v4
+      # https://github.com/docker/setup-qemu-action
+      -
+        name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      # https://github.com/docker/setup-buildx-action
+      -
+        name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      # https://github.com/marketplace/actions/docker-login
+      -
+        name: Log in to the Container registry
+        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      # https://github.com/marketplace/actions/build-and-push-docker-images
+      -
+        name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ghcr.io/t3chguy/timescaledb-postgis:latest
