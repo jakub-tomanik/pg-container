@@ -1,7 +1,7 @@
 # Apache Age
 # https://github.com/apache/age
 
-FROM postgres:16 AS age
+FROM postgres:16 AS AGE
 
 ARG age_release=1.5.0-rc0
 
@@ -83,10 +83,10 @@ RUN apt-get -y install postgresql-16-mobilitydb
 #        DEBIAN_FRONTEND=noninteractive apt-get -y install pgbackrest
 
 ## Apache AGE
-COPY --from=BASE /usr/lib/postgresql/16/lib/age.so /usr/lib/postgresql/16/lib/age.so
-COPY --from=BASE /usr/lib/postgresql/16/lib/bitcode /usr/lib/postgresql/16/lib/bitcode
-COPY --from=BASE /usr/share/postgresql/16/extension/age--1.5.0.sql /usr/share/postgresql/16/extension/age--1.5.0.sql
-COPY --from=BASE /usr/share/postgresql/16/extension/age.control /usr/share/postgresql/16/extension/age.control
+COPY --from=AGE /usr/lib/postgresql/16/lib/age.so /usr/lib/postgresql/16/lib/age.so
+COPY --from=AGE /usr/lib/postgresql/16/lib/bitcode /usr/lib/postgresql/16/lib/bitcode
+COPY --from=AGE /usr/share/postgresql/16/extension/age--1.5.0.sql /usr/share/postgresql/16/extension/age--1.5.0.sql
+COPY --from=AGE /usr/share/postgresql/16/extension/age.control /usr/share/postgresql/16/extension/age.control
 
 ## Config
 # extension timescaledb and others must be preloaded
