@@ -33,14 +33,15 @@ RUN echo "en_US.UTF-8 UTF-8" >> /etc/locale.gen && locale-gen en_US.UTF-8
 
 ENV DEBIAN_FRONTEND=noninteractive
 
+RUN apt-get update && \
+        apt-get -y upgrade && \
+        apt-get -y install gnupg apt-transport-https lsb-release curl
+
 RUN curl -s https://packagecloud.io/install/repositories/timescale/timescaledb/script.deb.sh | bash
 
 RUN apt-get -q update && \
-        apt-get -y upgrade && \
-        apt-get install -y --no-install-recommends --no-install-suggests \
-        gnupg apt-transport-https lsb-release curl \
 ## Timescaledb https://packagecloud.io/timescale/timescaledb
-        timescaledb-2-postgresql-16 timescaledb-tools \
+        apt-get -y install timescaledb-2-postgresql-16 timescaledb-tools \
 ## Postgis https://trac.osgeo.org/postgis/wiki/UsersWikiPostGIS24UbuntuPGSQL10Apt
         postgresql-16-postgis-3 \
         postgresql-16-postgis-3-scripts \
